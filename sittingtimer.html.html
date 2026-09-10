@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ergonomic Workspace Companion</title>
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --color-sitting: #38bdf8;
+            --color-active: #4ade80;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+        p.subtitle { color: var(--text-muted); font-size: 0.95rem; }
+
+        .settings-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        label { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+        input {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            width: 70px;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .gauge-box {
+            background: rgba(15, 23, 42, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .gauge-box h2 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .svg-container {
+            width: 180px;
+            height: 180px;
+            position: relative;
+        }
+
+        svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+        circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+
+        .circle-bg { stroke: rgba(51, 65, 85, 0.4); }
+        .circle-progress {
+            transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gauge-val { font-size: 1.6rem; font-weight: 700; }
+        .gauge-lbl { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        button {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #btn-sitting {
+            background-color: var(--color-sitting);
+            color: #0f172a;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
+        }
+        #btn-sitting.active {
+            background-color: var(--color-danger);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        #btn-active-break {
+            background-color: var(--color-active);
+            color: #0f172a;
+            box-shadow: 0 4px 14px rgba(74, 222, 128, 0.2);
+        }
+	#btn-clear-history {
+    	background-color: var(--bg-base);
+    	color: var(--text-muted);
+    	border: 1px solid var(--border);
+	}
+        #btn-active-break.active {
+            background-color: #15803d;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .history-section {
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+
+        .history-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .history-date { font-weight: 600; color: var(--text-main); }
+        .history-stats { color: var(--text-muted); }
+        .history-ratio {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--color-active);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .history-ratio.bad {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--color-danger);
+        }
+
+        .empty-history {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Ergonomic Workspace Tracker</h1>
+        <p class="subtitle">Maintain your health by regulating sedentary and active desk ratios.</p>
+    </header>
+
+    <div class="settings-bar">
+        <div class="setting-group">
+            <label for="input-sitting-limit">Sitting Alert Limit (min):</label>
+            <input type="number" id="input-sitting-limit" value="45" min="1" max="180">
+        </div>
+        <div class="setting-group">
+            <label for="input-daily-target">Daily Active Break Target (%):</label>
+            <input type="number" id="input-daily-target" value="25" min="5" max="100">
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="gauge-box">
+            <h2>Current Sitting Streak</h2>
+            <div class="svg-container">
+                <svg>
+                    <circle class="circle-bg" cx="90" cy="90" r="75"></circle>
+                    <circle id="gauge-streak" class="circle-progress" cx="90" cy="90" r="75" stroke="#38bdf8"></circle>
+                </svg>
+                <div class="gauge-text">
+                    <span id="txt-streak-time" class="gauge-val">00:00</span>
+                    <span id="txt-streak-status" class="gauge-lbl">Idle</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="gauge-box">
+            <h2>Daily Active Ratio Balance</h2>
+            <div class="svg-container">
+                <svg>
+                    <circle class="circle-bg" cx="90" cy="90" r="75"></circle>
+                    <circle id="gauge-balance" class="circle-progress" cx="90" cy="90" r="75" stroke="#4ade80"></circle>
+                </svg>
+                <div class="gauge-text">
+                    <span id="txt-balance-pct" class="gauge-val">0%</span>
+                    <span id="txt-balance-lbl" class="gauge-lbl">Target: 25%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="btn-sitting">🪑 Start Sitting</button>
+        <button id="btn-active-break">🏃 Active Break</button>
+	<button id="btn-clear-history">Clear History</button>
+    </div>
+
+    <div class="history-section">
+        <h3>Daily History Log</h3>
+        <div id="history-container" class="history-list">
+        </div>
+    </div>
+</div>
+<script>
+    let currentMode = 'idle';
+
+    // Timestamp-based timing
+    let modeStartTimestamp = null;
+    let lastUpdateTimestamp = null;
+
+    // Accumulated daily time, stored in seconds
+    let dailySittingTotal = 0;
+    let dailyActiveTotal = 0;
+
+    let timerInterval = null;
+    let sittingAlertTriggered = false;
+
+    const radius = 75;
+    const circumference = 2 * Math.PI * radius;
+
+    const btnSitting = document.getElementById('btn-sitting');
+    const btnActiveBreak = document.getElementById('btn-active-break');
+const btnClearHistory = document.getElementById('btn-clear-history');
+    const inputSittingLimit = document.getElementById('input-sitting-limit');
+    const inputDailyTarget = document.getElementById('input-daily-target');
+
+    const gaugeStreak = document.getElementById('gauge-streak');
+    const gaugeBalance = document.getElementById('gauge-balance');
+
+    const txtStreakTime = document.getElementById('txt-streak-time');
+    const txtStreakStatus = document.getElementById('txt-streak-status');
+    const txtBalancePct = document.getElementById('txt-balance-pct');
+    const txtBalanceLbl = document.getElementById('txt-balance-lbl');
+
+    const historyContainer = document.getElementById('history-container');
+
+    [gaugeStreak, gaugeBalance].forEach(g => {
+        g.style.strokeDasharray = circumference;
+        g.style.strokeDashoffset = circumference;
+    });
+
+
+    // ============================================================
+    // AUDIO WARNING
+    // ============================================================
+
+    function playCockpitWarning() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+            let startTime = ctx.currentTime;
+
+            for (let i = 0; i < 3; i++) {
+                createTone(ctx, 880, startTime, 0.12);
+                createTone(ctx, 660, startTime + 0.12, 0.12);
+                startTime += 0.35;
+            }
+        } catch (e) {
+            console.log("Audio synthesis failed:", e);
+        }
+    }
+
+
+    function createTone(ctx, freq, startTime, duration) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.25, startTime);
+        gain.gain.setValueAtTime(
+            0.25,
+            startTime + duration - 0.02
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            startTime + duration
+        );
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    }
+
+
+    // ============================================================
+    // TIME FORMATTING
+    // ============================================================
+
+    function formatTime(totalSecs) {
+        totalSecs = Math.max(0, Math.floor(totalSecs));
+
+        const hrs = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        const secs = totalSecs % 60;
+
+        const pad = n => String(n).padStart(2, '0');
+
+        return hrs > 0
+            ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+            : `${pad(mins)}:${pad(secs)}`;
+    }
+
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+
+    function init() {
+        setupNotifications();
+        loadDailySessionData();
+        renderHistory();
+        updateDashboards();
+
+        btnSitting.addEventListener('click', () => {
+            setMode('sitting');
+        });
+
+        btnActiveBreak.addEventListener('click', () => {
+            setMode('active');
+        });
+	btnClearHistory.addEventListener('click', clearHistory);function clearHistory() {
+   	 localStorage.removeItem('sitting_timer_history');
+   	 renderHistory();
+	}
+        inputSittingLimit.addEventListener(
+            'input',
+            updateDashboards
+        );
+
+        inputDailyTarget.addEventListener(
+            'input',
+            updateDashboards
+        );
+
+        // Important:
+        // Recalculate immediately when the page becomes visible again.
+        document.addEventListener(
+            'visibilitychange',
+            handleVisibilityChange
+        );
+
+        // Also update when browser window gets focus again.
+        window.addEventListener(
+            'focus',
+            updateTimerFromTimestamp
+        );
+    }
+
+
+    // ============================================================
+    // NOTIFICATIONS
+    // ============================================================
+
+    function setupNotifications() {
+        if (
+            "Notification" in window &&
+            Notification.permission === "default"
+        ) {
+            Notification.requestPermission();
+        }
+    }
+
+
+    // ============================================================
+    // DAILY STORAGE
+    // ============================================================
+
+    function loadDailySessionData() {
+        const todayStr = new Date().toLocaleDateString();
+
+        const savedData =
+            localStorage.getItem('sitting_timer_today');
+
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+
+            if (parsed.date === todayStr) {
+
+                dailySittingTotal = parsed.sitting || 0;
+                dailyActiveTotal = parsed.active || 0;
+
+                return;
+
+            } else {
+                archivePastDay(parsed);
+            }
+        }
+
+        saveDailySessionData();
+    }
+
+
+    function saveDailySessionData() {
+        const todayStr = new Date().toLocaleDateString();
+
+        localStorage.setItem(
+            'sitting_timer_today',
+            JSON.stringify({
+                date: todayStr,
+                sitting: dailySittingTotal,
+                active: dailyActiveTotal
+            })
+        );
+    }
+
+
+    function archivePastDay(pastDayObj) {
+        let history =
+            JSON.parse(
+                localStorage.getItem('sitting_timer_history')
+            ) || [];
+
+        if (!history.some(h => h.date === pastDayObj.date)) {
+
+            history.unshift(pastDayObj);
+
+            localStorage.setItem(
+                'sitting_timer_history',
+                JSON.stringify(history)
+            );
+        }
+    }
+
+
+    // ============================================================
+    // MODE CONTROL
+    // ============================================================
+
+    function setMode(mode) {
+
+        // If clicking the currently active mode,
+        // return to idle.
+        if (currentMode === mode) {
+
+            updateTimerFromTimestamp();
+
+            currentMode = 'idle';
+
+            modeStartTimestamp = null;
+            lastUpdateTimestamp = null;
+
+            sittingAlertTriggered = false;
+
+        } else {
+
+            // First finalize any elapsed time
+            // from the previous mode.
+            updateTimerFromTimestamp();
+
+            currentMode = mode;
+
+            // Start a new timestamp.
+            const now = Date.now();
+
+            modeStartTimestamp = now;
+            lastUpdateTimestamp = now;
+
+            sittingAlertTriggered = false;
+        }
+
+
+        // Update buttons
+        btnSitting.classList.toggle(
+            'active',
+            currentMode === 'sitting'
+        );
+
+        btnSitting.innerText =
+            currentMode === 'sitting'
+                ? '🛑 Stop Sitting'
+                : '🪑 Start Sitting';
+
+
+        btnActiveBreak.classList.toggle(
+            'active',
+            currentMode === 'active'
+        );
+
+        btnActiveBreak.innerText =
+            currentMode === 'active'
+                ? '🛑 Stop Break'
+                : '🏃 Active Break';
+
+
+        // Start lightweight refresh loop.
+        // The loop is NOT responsible for measuring time.
+        // It only refreshes the display.
+        clearInterval(timerInterval);
+
+        if (currentMode !== 'idle') {
+
+            timerInterval = setInterval(
+                updateTimerFromTimestamp,
+                250
+            );
+        }
+
+
+        updateDashboards();
+    }
+
+
+    // ============================================================
+    // TIMESTAMP-BASED TIMER
+    // ============================================================
+
+    function updateTimerFromTimestamp() {
+
+        if (
+            currentMode === 'idle' ||
+            modeStartTimestamp === null
+        ) {
+            updateDashboards();
+            return;
+        }
+
+
+        const now = Date.now();
+
+
+        // First update
+        if (lastUpdateTimestamp === null) {
+            lastUpdateTimestamp = now;
+            return;
+        }
+
+
+        // Calculate actual elapsed time.
+        // This is the important part.
+        const elapsedSeconds =
+            Math.floor(
+                (now - lastUpdateTimestamp) / 1000
+            );
+
+
+        if (elapsedSeconds <= 0) {
+            updateDashboards();
+            return;
+        }
+
+
+        // Move timestamp forward by the amount
+        // that was actually accounted for.
+        lastUpdateTimestamp += elapsedSeconds * 1000;
+
+
+        // Add real elapsed time to the appropriate category.
+        if (currentMode === 'sitting') {
+
+            dailySittingTotal += elapsedSeconds;
+
+            checkSittingAlert();
+
+        } else if (currentMode === 'active') {
+
+            dailyActiveTotal += elapsedSeconds;
+        }
+
+
+        saveDailySessionData();
+
+        updateDashboards();
+    }
+
+
+    // ============================================================
+    // SITTING ALERT
+    // ============================================================
+
+    function checkSittingAlert() {
+
+        const limitMins =
+            parseInt(inputSittingLimit.value) || 45;
+
+        const limitSecs = limitMins * 60;
+
+
+        // Only trigger once per sitting session.
+        if (
+            modeStartTimestamp !== null &&
+            Date.now() - modeStartTimestamp >=
+                limitSecs * 1000 &&
+            !sittingAlertTriggered
+        ) {
+
+            sittingAlertTriggered = true;
+
+            triggerAlert();
+        }
+    }
+
+
+    function triggerAlert() {
+
+        playCockpitWarning();
+
+        if (
+            "Notification" in window &&
+            Notification.permission === "granted"
+        ) {
+
+            new Notification(
+                "MASTER WARNING: RETRACT SEAT",
+                {
+                    body:
+                        "Sitting duration limit encountered. Stand up immediately."
+                }
+            );
+        }
+    }
+
+
+    // ============================================================
+    // BROWSER VISIBILITY
+    // ============================================================
+
+    function handleVisibilityChange() {
+
+        // When returning to the page, immediately
+        // calculate the elapsed wall-clock time.
+        if (!document.hidden) {
+
+            updateTimerFromTimestamp();
+            updateDashboards();
+        }
+    }
+
+
+    // ============================================================
+    // DASHBOARD
+    // ============================================================
+
+    function updateDashboards() {
+
+        const limitMins =
+            parseInt(inputSittingLimit.value) || 45;
+
+        const limitSecs = limitMins * 60;
+
+
+        // --------------------------------------------------------
+        // CURRENT SITTING STREAK
+        // --------------------------------------------------------
+
+        let currentStreak = 0;
+
+        if (
+            currentMode === 'sitting' &&
+            modeStartTimestamp !== null
+        ) {
+
+            currentStreak =
+                Math.floor(
+                    (Date.now() - modeStartTimestamp) / 1000
+                );
+        }
+
+
+        txtStreakTime.innerText =
+            formatTime(currentStreak);
+
+
+        let streakPercent =
+            Math.min(
+                currentStreak / limitSecs,
+                1
+            );
+
+
+        const streakOffset =
+            circumference -
+            (streakPercent * circumference);
+
+
+        gaugeStreak.style.strokeDashoffset =
+            streakOffset;
+
+
+        if (currentMode !== 'sitting') {
+
+            gaugeStreak.style.stroke =
+                "var(--color-sitting)";
+
+            txtStreakStatus.innerText =
+                currentMode === 'active'
+                    ? "Moving"
+                    : "Idle";
+
+            txtStreakStatus.style.color =
+                "var(--text-muted)";
+
+        } else if (currentStreak >= limitSecs) {
+
+            gaugeStreak.style.stroke =
+                "var(--color-danger)";
+
+            txtStreakStatus.innerText =
+                "PULL UP! STAND UP!";
+
+            txtStreakStatus.style.color =
+                "var(--color-danger)";
+
+        } else if (
+            currentStreak >= limitSecs * 0.8
+        ) {
+
+            gaugeStreak.style.stroke =
+                "var(--color-warning)";
+
+            txtStreakStatus.innerText =
+                "Approaching Limit";
+
+            txtStreakStatus.style.color =
+                "var(--color-warning)";
+
+        } else {
+
+            gaugeStreak.style.stroke =
+                "var(--color-sitting)";
+
+            txtStreakStatus.innerText =
+                "Sitting Safely";
+
+            txtStreakStatus.style.color =
+                "var(--color-sitting)";
+        }
+
+
+        // --------------------------------------------------------
+        // DAILY ACTIVE RATIO
+        // --------------------------------------------------------
+
+        const targetPercent =
+            parseInt(inputDailyTarget.value) || 25;
+
+        txtBalanceLbl.innerText =
+            `Target: ${targetPercent}% Active`;
+
+
+        const totalDailyTime =
+            dailySittingTotal +
+            dailyActiveTotal;
+
+
+        let activeRatio = 0;
+
+        if (totalDailyTime > 0) {
+
+            activeRatio =
+                (dailyActiveTotal /
+                totalDailyTime) * 100;
+        }
+
+
+        txtBalancePct.innerText =
+            `${Math.round(activeRatio)}%`;
+
+
+        const balanceProgressFraction =
+            Math.min(
+                activeRatio / targetPercent,
+                1
+            );
+
+
+        const balanceOffset =
+            circumference -
+            (
+                balanceProgressFraction *
+                circumference
+            );
+
+
+        gaugeBalance.style.strokeDashoffset =
+            balanceOffset;
+
+
+        if (activeRatio >= targetPercent) {
+
+            gaugeBalance.style.stroke =
+                "var(--color-active)";
+
+        } else if (
+            activeRatio >= targetPercent * 0.6
+        ) {
+
+            gaugeBalance.style.stroke =
+                "var(--color-warning)";
+
+        } else {
+
+            gaugeBalance.style.stroke =
+                "var(--color-sitting)";
+        }
+    }
+
+
+    // ============================================================
+    // HISTORY
+    // ============================================================
+
+    function renderHistory() {
+
+        const history =
+            JSON.parse(
+                localStorage.getItem(
+                    'sitting_timer_history'
+                )
+            ) || [];
+
+
+        const targetPercent =
+            parseInt(inputDailyTarget.value) || 25;
+
+
+        if (history.length === 0) {
+
+            historyContainer.innerHTML =
+                `<div class="empty-history">
+                    No historic desk configurations recorded yet.
+                </div>`;
+
+            return;
+        }
+
+
+        historyContainer.innerHTML =
+            history.map(item => {
+
+                const total =
+                    (item.sitting || 0) +
+                    (item.active || 0);
+
+
+                const ratio =
+                    total > 0
+                        ? Math.round(
+                            (item.active / total) * 100
+                          )
+                        : 0;
+
+
+                const isTargetMet =
+                    ratio >= targetPercent;
+
+
+                return `
+                    <div class="history-item">
+                        <span class="history-date">
+                            ${item.date}
+                        </span>
+
+                        <span class="history-stats">
+                            🪑 ${Math.round(
+                                (item.sitting || 0) / 60
+                            )}m
+                            |
+                            🏃 ${Math.round(
+                                (item.active || 0) / 60
+                            )}m
+                        </span>
+
+                        <span class="history-ratio ${
+                            isTargetMet ? '' : 'bad'
+                        }">
+                            ${ratio}% Active
+                        </span>
+                    </div>
+                `;
+
+            }).join('');
+    }
+
+
+    // ============================================================
+    // START
+    // ============================================================
+
+    init();
+</script>
+</body>
+</html>
